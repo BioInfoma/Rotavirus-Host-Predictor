@@ -178,6 +178,101 @@ class PredictionResponse(BaseModel):
     query_aligned: str
     top_human_features: List[ShapFeature]
     top_animal_features: List[ShapFeature]
+    interpretation: str
+
+def generate_interpretation(prob: float, is_human: bool, sorted_shap: list, vp8_seq: str) -> str:
+    """Translate SHAP values into a plain-English biological interpretation."""
+    direction = "human-adapted" if is_human else "animal-adapted"
+    confidence = "high" if abs(prob - 0.5) > 0.35 else "moderate" if abs(prob - 0.5) > 0.15 else "borderline"
+    
+    # Separate k-mer features (biologically named) from ESM-2 features
+    top_kmers_human = []
+    top_kmers_animal = []
+    esm_human_count = 0
+    esm_animal_count = 0
+    
+    for feat_name, shap_val in sorted_shap:
+        if feat_name.startswith("kmer_"):
+            motif = feat_name.replace("kmer_", "")
+            # Format as hyphenated single-letter amino acids: GSE -> G-S-E
+            motif_display = "-".join(list(motif))
+            if shap_val > 0 and len(top_kmers_human) < 3:
+                top_kmers_human.append((motif_display, motif, shap_val))
+            elif shap_val < 0 and len(top_kmers_animal) < 3:
+                top_kmers_animal.append((motif_display, motif, shap_val))
+        elif feat_name.startswith("esm_dim_"):
+            if shap_val > 0:
+                esm_human_count += 1
+            elif shap_val < 0:
+                esm_animal_count += 1
+    
+    # Check which k-mers are actually present in the query sequence
+    def check_presence(motif_raw, seq):
+        return motif_raw in seq
+    
+    sentences = []
+    
+    # Opening sentence
+    sentences.append(
+        f"The model predicts this sequence is {direction} with {confidence} confidence ({prob*100:.1f}%)."
+    )
+    
+    if is_human:
+        # Explain human-adapted drivers
+        if top_kmers_human:
+            present = [m for m in top_kmers_human if check_presence(m[1], vp8_seq)]
+            absent = [m for m in top_kmers_human if not check_presence(m[1], vp8_seq)]
+            if present:
+                motif_list = ", ".join([f"'{m[0]}'" for m in present])
+                sentences.append(
+                    f"The VP8* domain contains the amino acid motif(s) {motif_list}, "
+                    f"which are characteristic of human-tropic rotavirus strains and strongly "
+                    f"pushed the prediction towards human adaptation."
+                )
+            if absent:
+                motif_list = ", ".join([f"'{m[0]}'" for m in absent])
+                sentences.append(
+                    f"Additionally, the absence or low frequency of motif(s) {motif_list} "
+                    f"contributed to the overall scoring."
+                )
+        if top_kmers_animal:
+            present_animal = [m for m in top_kmers_animal if check_presence(m[1], vp8_seq)]
+            if present_animal:
+                motif_list = ", ".join([f"'{m[0]}'" for m in present_animal])
+                sentences.append(
+                    f"However, the sequence also retains animal-associated motif(s) {motif_list}, "
+                    f"which partially counteracted the human signal."
+                )
+    else:
+        # Explain animal-adapted drivers
+        if top_kmers_animal:
+            present = [m for m in top_kmers_animal if check_presence(m[1], vp8_seq)]
+            if present:
+                motif_list = ", ".join([f"'{m[0]}'" for m in present])
+                sentences.append(
+                    f"The VP8* domain contains the amino acid motif(s) {motif_list}, "
+                    f"which are characteristic of animal-origin rotavirus strains and strongly "
+                    f"pushed the prediction away from human adaptation."
+                )
+        if top_kmers_human:
+            present_human = [m for m in top_kmers_human if check_presence(m[1], vp8_seq)]
+            if present_human:
+                motif_list = ", ".join([f"'{m[0]}'" for m in present_human])
+                sentences.append(
+                    f"Notably, the sequence does contain human-associated motif(s) {motif_list}, "
+                    f"suggesting partial but incomplete adaptation to human hosts."
+                )
+    
+    # ESM-2 structural context
+    esm_total = esm_human_count + esm_animal_count
+    if esm_total > 0:
+        dominant = "human" if esm_human_count > esm_animal_count else "animal"
+        sentences.append(
+            f"Beyond sequence motifs, {esm_total} ESM-2 structural embedding dimensions contributed "
+            f"to the prediction, with the majority encoding {dominant}-associated protein folding patterns."
+        )
+    
+    return " ".join(sentences)
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict_sequence(
@@ -232,6 +327,8 @@ async def predict_sequence(
     top_animal = [{"feature": k, "impact": v} for k, v in sorted_shap[-5:] if v < 0]
     top_animal = sorted(top_animal, key=lambda x: x["impact"]) # Most negative first
     
+    interpretation = generate_interpretation(prob, is_human, sorted_shap, vp8_seq)
+    
     return PredictionResponse(
         accession=record_id,
         zoonotic_potential=prob * 100.0,
@@ -242,7 +339,8 @@ async def predict_sequence(
         ref_aligned=ref_aligned,
         query_aligned=query_aligned,
         top_human_features=top_human,
-        top_animal_features=top_animal
+        top_animal_features=top_animal,
+        interpretation=interpretation
     )
 
 @app.get("/health")

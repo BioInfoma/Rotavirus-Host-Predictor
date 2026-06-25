@@ -163,6 +163,18 @@ function App() {
               </div>
             </div>
 
+            {/* Biological Interpretation */}
+            {result.interpretation && (
+              <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))', textAlign: 'left', borderLeft: '4px solid #8b5cf6' }}>
+                <h4 style={{ margin: '0 0 0.75rem 0', color: '#c4b5fd', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FileText size={18} /> Biological Interpretation
+                </h4>
+                <p style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.7', margin: 0 }}>
+                  {result.interpretation}
+                </p>
+              </div>
+            )}
+
             {/* SHAP Feature Importance */}
             <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(30, 41, 59, 0.5)', textAlign: 'left' }}>
               <h4 style={{ margin: '0 0 0.5rem 0', color: '#e2e8f0' }}>Top Factors Driving Prediction</h4>
