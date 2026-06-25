@@ -1,0 +1,7 @@
+filter,count
+total_filtered,1
+length_too_short,0
+length_too_long,0
+high_ambiguity,1
+orf_failed,0
+internal_stops,0

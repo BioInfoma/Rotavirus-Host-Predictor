@@ -1,0 +1,29 @@
+Data Integrity Report - EVALUATION
+======================================================================
+
+Total sequences: 146
+Nucleotide sequences: 145
+Protein sequences: 145
+VP8* sequences: 145
+
+Completeness Check:
+  Nucleotide: FAIL
+  Protein: FAIL
+  VP8*: FAIL
+
+Metadata Completeness:
+  accession: 146/146 complete
+  full_name: 23/146 complete
+  host: 146/146 complete
+  genotype: 146/146 complete
+  label: 146/146 complete
+  adaptation_group: 146/146 complete
+  country: 146/146 complete
+  collection_year: 142/146 complete
+
+VP8* Coverage Statistics:
+  Mean: 97.75%
+  Min: 87.13%
+  Max: 100.00%
+
+Report generated at 2026-06-25 13:14:58.510035

@@ -1,0 +1,29 @@
+Data Integrity Report - TRAINING
+======================================================================
+
+Total sequences: 132
+Nucleotide sequences: 132
+Protein sequences: 132
+VP8* sequences: 132
+
+Completeness Check:
+  Nucleotide: PASS
+  Protein: PASS
+  VP8*: PASS
+
+Metadata Completeness:
+  accession: 132/132 complete
+  full_name: 73/132 complete
+  host: 132/132 complete
+  genotype: 132/132 complete
+  label: 132/132 complete
+  adaptation_group: 132/132 complete
+  country: 132/132 complete
+  collection_year: 125/132 complete
+
+VP8* Coverage Statistics:
+  Mean: 98.24%
+  Min: 88.24%
+  Max: 100.00%
+
+Report generated at 2026-06-25 13:14:58.508974

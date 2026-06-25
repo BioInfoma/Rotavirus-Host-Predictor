@@ -25,7 +25,6 @@ vp4_env/
 
 # Data and Models
 data_vp4/
-analysis_ready/
 logs/
 *.json.bak
 
