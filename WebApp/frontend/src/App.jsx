@@ -5,6 +5,7 @@ import { UploadCloud, ShieldAlert, CheckCircle2, FileText } from 'lucide-react';
 import './index.css';
 
 function App() {
+  const API_URL = import.meta.env.DEV ? 'http://127.0.0.1:8000' : '';
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ function App() {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/predict', formData, {
+      const response = await axios.post(`${API_URL}/predict`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(response.data);
@@ -43,7 +44,7 @@ function App() {
     formData.append('raw_sequence', pastedSeq);
 
     try {
-      const response = await axios.post('http://127.0.0.1:8000/predict', formData, {
+      const response = await axios.post(`${API_URL}/predict`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(response.data);
