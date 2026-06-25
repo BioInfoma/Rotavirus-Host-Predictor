@@ -220,10 +220,9 @@ async def predict_sequence(
     prob = float(xgb_model.predict_proba(X_input)[0, 1])
     is_human = prob >= 0.5
     
-    # 5. SHAP Values
     import shap
     explainer = shap.TreeExplainer(xgb_model)
-    shap_values = explainer.shap_values(X_input)
+    shap_values = explainer.shap_values(X_input, approximate=True)
     
     feature_names = X_input.columns.tolist()
     shap_dict = {feature_names[i]: float(shap_values[0][i]) for i in range(len(feature_names))}
