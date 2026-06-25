@@ -1,3 +1,12 @@
+---
+title: Rotavirus Host Predictor
+emoji: 🦠
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # Rotavirus VP4 Zoonotic Potential Predictor 🦠
 
 A deep-learning-powered web application for predicting the zoonotic potential (host adaptation) of Rotavirus A sequences directly from raw FASTA files.
