@@ -5,7 +5,6 @@ import { UploadCloud, ShieldAlert, CheckCircle2, FileText, Search, Activity, Git
 import './index.css';
 
 // Import the new tabs
-import PhyloTab from './components/PhyloTab';
 import StructureTab from './components/StructureTab';
 
 function App() {
@@ -17,6 +16,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [pastedSeq, setPastedSeq] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const onDrop = useCallback(async (acceptedFiles) => {
     const file = acceptedFiles[0];
@@ -83,7 +83,6 @@ function App() {
       }}>
         {[
           { id: 'single', label: 'Single Sequence Analysis', icon: <Activity size={18} /> },
-          { id: 'phylo', label: 'Phylogenetic Spillover Map', icon: <GitBranch size={18} /> },
           { id: 'structure', label: '3D Structure Visualizer', icon: <Search size={18} /> }
         ].map(tab => (
           <button
@@ -211,19 +210,29 @@ function App() {
 
               {/* Biological Interpretation */}
               {result.interpretation && (
-                <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))', textAlign: 'left', borderLeft: '4px solid #8b5cf6' }}>
-                  <h4 style={{ margin: '0 0 0.75rem 0', color: '#c4b5fd', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FileText size={18} /> Biological Interpretation
-                  </h4>
-                  <p style={{ color: '#e2e8f0', fontSize: '0.95rem', lineHeight: '1.7', margin: 0 }}>
+                <div className="glass-panel" style={{ marginTop: '2.5rem', padding: '2rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))', textAlign: 'left', border: '1px solid #8b5cf6', boxShadow: '0 4px 20px rgba(139, 92, 246, 0.15)' }}>
+                  <h3 style={{ margin: '0 0 1rem 0', color: '#c4b5fd', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.4rem' }}>
+                    <FileText size={24} /> Interpretation
+                  </h3>
+                  <p style={{ color: '#f8fafc', fontSize: '1.1rem', lineHeight: '1.8', margin: 0 }}>
                     {result.interpretation}
                   </p>
                 </div>
               )}
 
+              <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+                <button 
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  style={{ background: 'transparent', border: '1px solid #334155', color: '#94a3b8', padding: '0.5rem 1rem', borderRadius: '4px', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  {showAdvanced ? 'Hide Advanced Math Details' : 'View Advanced Math Details (SHAP)'}
+                </button>
+              </div>
+
               {/* SHAP Feature Importance */}
-              <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(30, 41, 59, 0.5)', textAlign: 'left' }}>
-                <h4 style={{ margin: '0 0 0.5rem 0', color: '#e2e8f0' }}>Top Factors Driving Prediction</h4>
+              {showAdvanced && (
+              <div className="glass-panel" style={{ marginTop: '1.5rem', padding: '1.5rem', background: 'rgba(30, 41, 59, 0.5)', textAlign: 'left' }}>
+                <h4 style={{ margin: '0 0 0.5rem 0', color: '#e2e8f0' }}>Key Amino Acid Mutations Driving the Result (SHAP)</h4>
                 <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1.5rem', lineHeight: '1.4' }}>
                   <strong>How to interpret:</strong> SHAP values show the mathematical impact of a specific feature on the model's decision. 
                   Higher positive values strongly push the prediction towards Human-adapted, while negative values push it towards Animal-adapted. 
@@ -250,6 +259,7 @@ function App() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* Sequence Alignment Visualization */}
               <div className="glass-panel" style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(30, 41, 59, 0.5)', textAlign: 'left' }}>
@@ -296,9 +306,7 @@ function App() {
         </div>
       )}
 
-      {activeTab === 'phylo' && (
-        <PhyloTab />
-      )}
+
 
       {activeTab === 'structure' && (
         <StructureTab />

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as $3Dmol from '3dmol';
-import { ShieldAlert, Info, Layers, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Info, Layers, RefreshCw, FileText } from 'lucide-react';
 import axios from 'axios';
 
 function StructureTab() {
@@ -209,7 +209,21 @@ function StructureTab() {
 
       {/* Visualization Stage */}
       {data && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem', minHeight: '600px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          
+          {/* Biological Interpretation */}
+          {data.interpretation && (
+            <div className="glass-panel" style={{ padding: '2rem', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))', textAlign: 'left', border: '1px solid #8b5cf6', boxShadow: '0 4px 20px rgba(139, 92, 246, 0.15)' }}>
+              <h3 style={{ margin: '0 0 1rem 0', color: '#c4b5fd', display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '1.4rem' }}>
+                <FileText size={24} /> Interpretation
+              </h3>
+              <p style={{ color: '#f8fafc', fontSize: '1.1rem', lineHeight: '1.8', margin: 0 }}>
+                {data.interpretation}
+              </p>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem', minHeight: '600px' }}>
           
           {/* Left panel: 3D viewer + controls */}
           <div>
@@ -435,6 +449,7 @@ function StructureTab() {
             )}
           </div>
           
+        </div>
         </div>
       )}
     </div>

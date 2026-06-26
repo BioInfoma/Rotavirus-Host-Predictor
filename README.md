@@ -25,7 +25,8 @@ It uses a dual-model approach:
 
 ## Features
 - 🧬 **Sequence Alignment**: Automatically aligns uploaded nucleotide or protein sequences against the human Wa P[8] reference using BLOSUM62, handling frameshifts and translating 6 frames to extract the VP8* domain.
-- 📊 **SHAP Explainability**: Unboxes the AI! Shows exactly which ESM-2 dimensions and amino acid k-mers drove the model's prediction.
+- 📊 **Plain English Interpretations**: Translates complex deep learning mathematics and SHAP values into understandable biological language.
+- 🧪 **Interactive 3D Structure Mapping**: Maps sequence mutations and AI risk scores directly onto the 3D crystal structure of the rotavirus spike protein (PDB: 2DWR) in real-time.
 - 💻 **Modern Dashboard**: A beautiful, responsive glassmorphic React interface.
 
 ## Local Installation
