@@ -40,3 +40,8 @@ WebApp/frontend/.eslintcache
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Project-specific local binaries and scratch outputs
+bin/
+scratch/temp_test.fasta
+
