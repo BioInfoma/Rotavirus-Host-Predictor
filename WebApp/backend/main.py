@@ -78,7 +78,11 @@ def load_models():
     model_path = Path(CONFIG['analysis_dir']) / "models" / "xgboost_vp4_model.json"
     xgb_model.load_model(model_path)
     model_state['xgb'] = xgb_model
-    logger.info("XGBoost model loaded.")
+    
+    # Cache SHAP TreeExplainer
+    import shap
+    model_state['explainer'] = shap.TreeExplainer(xgb_model)
+    logger.info("XGBoost model and SHAP explainer loaded.")
 
     # 4. Load VP8 reference for alignment
     wa_ref_path = Path(CONFIG['wa_reference'])
@@ -177,10 +181,12 @@ def extract_vp8(sequence: str):
         seq_obj = Seq(sequence)
         candidate_seqs = []
         for i in range(3):
-            candidate_seqs.append(str(seq_obj[i:].translate(to_stop=False)).replace("*", "X"))
+            trim_len = ((len(seq_obj) - i) // 3) * 3
+            candidate_seqs.append(str(seq_obj[i:i+trim_len].translate(to_stop=False)).replace("*", "X"))
         rev_seq = seq_obj.reverse_complement()
         for i in range(3):
-            candidate_seqs.append(str(rev_seq[i:].translate(to_stop=False)).replace("*", "X"))
+            trim_len = ((len(rev_seq) - i) // 3) * 3
+            candidate_seqs.append(str(rev_seq[i:i+trim_len].translate(to_stop=False)).replace("*", "X"))
             
     best_score = -1
     best_extraction = None
@@ -223,6 +229,34 @@ def extract_esm2(sequence: str):
     
     cols = [f"esm_dim_{i}" for i in range(len(mean_embedding))]
     return pd.DataFrame([mean_embedding], columns=cols)
+
+def extract_esm2_batch(sequences: List[str]) -> pd.DataFrame:
+    import torch
+    tokenizer = model_state['tokenizer']
+    model = model_state['esm2']
+    device = model_state['device']
+    
+    inputs = tokenizer(sequences, padding=True, return_tensors="pt")
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    
+    with torch.no_grad():
+        outputs = model(**inputs)
+        
+    last_hidden_state = outputs.last_hidden_state
+    
+    embeddings = []
+    for i in range(len(sequences)):
+        mask = inputs['attention_mask'][i]
+        real_token_indices = torch.where(mask == 1)[0]
+        # Exclude <cls> (first token) and <eos> (last active token)
+        residue_indices = real_token_indices[1:-1]
+        
+        residue_states = last_hidden_state[i, residue_indices, :]
+        mean_embedding = residue_states.mean(dim=0).cpu().numpy()
+        embeddings.append(mean_embedding)
+        
+    cols = [f"esm_dim_{i}" for i in range(model.config.hidden_size)]
+    return pd.DataFrame(embeddings, columns=cols)
 
 def extract_kmer(sequence: str):
     vectorizer = model_state['vectorizer']
@@ -412,8 +446,7 @@ async def predict_sequence(
     prob = float(xgb_model.predict_proba(X_input)[0, 1])
     is_human = prob >= 0.5
     
-    import shap
-    explainer = shap.TreeExplainer(xgb_model)
+    explainer = model_state['explainer']
     shap_values = explainer.shap_values(X_input, approximate=True)
     
     feature_names = X_input.columns.tolist()
@@ -506,7 +539,7 @@ async def predict_phylo(file: UploadFile = File(...)):
             iqtree_cmd = [
                 iqtree_path, 
                 "-s", str(aligned_fasta_path), 
-                "-m", "MFP", 
+                "-m", "LG+G4", 
                 "-bb", "1000", 
                 "-nt", "2", 
                 "-pre", str(prefix),
@@ -551,13 +584,15 @@ async def predict_phylo(file: UploadFile = File(...)):
                                 model_used = parts[1].split("chosen")[0].strip()
                                 break
 
-        # 7. Run predictions for all leaves
+        # 7. Run predictions for all leaves (using ESM-2 batching and cached SHAP explainer)
         xgb_model = model_state['xgb']
-        import shap
-        explainer = shap.TreeExplainer(xgb_model)
+        explainer = model_state['explainer']
         
-        for clean_id, vp8_seq, start, end in vp8_records:
-            df_esm = extract_esm2(vp8_seq)
+        vp8_seqs = [rec[1] for rec in vp8_records]
+        df_esm_all = extract_esm2_batch(vp8_seqs)
+        
+        for idx, (clean_id, vp8_seq, start, end) in enumerate(vp8_records):
+            df_esm = df_esm_all.iloc[[idx]].reset_index(drop=True)
             df_kmer = extract_kmer(vp8_seq)
             X_input = pd.concat([df_esm, df_kmer], axis=1)
             
@@ -627,8 +662,7 @@ async def predict_structure(
     prob = float(xgb_model.predict_proba(X_input)[0, 1])
     is_human = prob >= 0.5
     
-    import shap
-    explainer = shap.TreeExplainer(xgb_model)
+    explainer = model_state['explainer']
     shap_values = explainer.shap_values(X_input, approximate=True)
     feature_names = X_input.columns.tolist()
     
